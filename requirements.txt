@@ -1,0 +1,6 @@
+click
+duckdb
+faker
+faker_commerce
+yaml
+jsonlines
