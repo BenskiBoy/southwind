@@ -5,7 +5,7 @@ from .db_connector import DBConnector
 from .exporter import Exporter
 
 
-class SouthernGale:
+class SouthWind:
     def __init__(self, config_path: str):
 
         self.cnf = Config(config_path)

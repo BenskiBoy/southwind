@@ -1,4 +1,4 @@
-# SoutherGale
+# Southern-Gale
 There's a lot of sample databases (for example the projects namesake, Northwind) out there and lots of ways to generate some dummy data (faker), but i couldn't find much in the way of dynamically generating realistic CDC data.
 This is an attampt at that.
 
