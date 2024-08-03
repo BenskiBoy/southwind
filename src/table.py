@@ -20,6 +20,8 @@ logger.setLevel(logging.INFO)
 
 
 class Table:
+    """Table class to represent a table in the database, with fields and actions to perform on the table"""
+
     def __init__(self, table_name: str, fields: List[Field], actions: List[Action]):
         self.table_name = table_name
         self.fields = fields + [
@@ -32,26 +34,68 @@ class Table:
         ]
         self.actions = actions
 
-        print(self.genereate_create_table_str())
-
     def generate_count_str(self, table: str) -> str:
+        """Generate a count query for a table
+
+        Args:
+            table (str): table name
+
+        Returns:
+            str: SQL query
+        """
         return f"""select count(*) as cnt from {table} where change_type != 'D';"""
 
     def generate_random_lookup_str(
-        self, table: str, field: str, default_val: str
+        self, table: str, field: str, default_val: str = "1"
     ) -> str:
-        return f"""select {field} from {table} where change_type != 'D' using sample 1 union all (select 1 as {field} order by {field} desc)"""  # handles for empty table and filters deleted records
+        """Generate a random lookup query for a table and field, with a default value of 1
+            Will also handle for empty table and deleted records
+
+        Args:
+            table (str): table name
+            field (str): field to perform random look of
+            default_val (str, optional): default value if table is empty. Defaults to ""
+
+        Returns:
+            str: SQL query
+        """
+        return f"""select {field} from {table} where change_type != 'D' using sample 1 union all (select {default_val} as {field} order by {field} desc)"""  # handles for empty table and filters deleted records
 
     def generate_increment_str(self, table: str, field: str) -> str:
+        """Gets the max of a field and increments it by 1, used for auto incrementing fields
+
+        Args:
+            table (str): table name
+            field (str): field to get autoincrement of.
+
+        Returns:
+            str: SQL query
+        """
         return f"""select coalesce((max({field}) + 1), 1) as inc from {table};"""  # not filtering out deleted records as we don't want to reuse the deleted record's id
 
-    def genereate_create_table_str(self):
+    def genereate_create_table_str(self) -> str:
+        """generate DDL
+
+        Returns:
+            str: SQL query
+        """
         return f"""
         CREATE TABLE if not exists {self.table_name}(
             {', '.join(' '.join([field.name, field.type]) + (' primary key' if field.is_pk else '') for field in self.fields)});
         """
 
-    def pass_imposter(self, field: Field) -> Statement:
+    def evaluate_imposter(self, field: Field) -> Statement:
+        """Evaluate the imposter field and return the appropriate Statement type
+
+        Args:
+            field (Field): _description_
+
+        Raises:
+            InvalidValueError: _description_
+
+        Returns:
+            Statement: _description_
+        """
         result = field.evaluate()
 
         if isinstance(result, ImposterDirectResult):
@@ -71,16 +115,17 @@ class Table:
             )
 
         else:
-            import pdb
-
-            pdb.set_trace()
             raise InvalidValueError("Invalid value")
 
     def generate_insert(self) -> List[Statement]:
+        """Generate List of statements for insert
+        Returns:
+            List[Statement]: List of Statemet objects
+        """
         result_values = []
         for field in self.fields:
             result_values.append(DirectStatement(f"'"))
-            result_values.append(self.pass_imposter(field))
+            result_values.append(self.evaluate_imposter(field))
             result_values.append(
                 DirectStatement("', " if field != self.fields[-1] else "'")
             )
@@ -91,40 +136,60 @@ class Table:
         )
 
     def generate_set(self, action: Set) -> List[Statement]:
+        """Generate List of statements for set
+        Args:
+            action (Set): Action to perform
+        Returns:
+            List[Statement]: List of Statement objects
+        """
 
         result_values = [
             DirectStatement(f"UPDATE {self.table_name} set {action.field} = '")
         ]
-        result_values.append(self.pass_imposter(action.value))
+        result_values.append(self.evaluate_imposter(action.value))
 
         if action.where_clause is not None:
             return result_values + [
                 DirectStatement(
-                    f"', change_token = (select max(change_token) + 1 from {self.table_name}), change_type = 'U' where {action.where_table}.{action.where_field} {action.where_condition} '"
+                    f"', change_token = (SELECT MAX(change_token) + 1 FROM {self.table_name}), change_type = 'U' WHERE {action.where_table}.{action.where_field} {action.where_condition} '"
                 ),
-                self.pass_imposter(action.where_value),
-                DirectStatement("' and change_type != 'D';"),
+                self.evaluate_imposter(action.where_value),
+                DirectStatement("' AND change_type != 'D';"),
             ]
         else:
             return result_values + [
                 DirectStatement(
-                    f"', change_token = (select max(change_token) + 1 from {self.table_name}), change_type = 'U' where change_type != 'D';"
+                    f"', change_token = (SELECT MAX(change_token) + 1 FROM {self.table_name}), change_type = 'U' WHERE change_type != 'D';"
                 )
             ]
 
     def generate_delete(self, action: Remove) -> List[Statement]:
+        """Generate List of statements for delete
+        Args:
+            action (Remove): Action to perform
+        Returns:
+            List[Statement]: List of Statement objects
+        """
 
         return [
             DirectStatement(
-                f"update {self.table_name} set change_token = (select max(change_token) + 1 from {self.table_name}), change_type = 'D' where {action.where_table}.{action.where_field} {action.where_condition} '"
+                f"UPDATE {self.table_name} SET change_token = (SELECT MAX(change_token) + 1 FROM {self.table_name}), change_type = 'D' WHERE {action.where_table}.{action.where_field} {action.where_condition} '"
             ),
-            self.pass_imposter(action.where_value),
+            self.evaluate_imposter(action.where_value),
             DirectStatement(
-                "' and change_type != 'D';"
+                "' AND change_type != 'D';"
             ),  # probably not need, but will leave in for now
         ]
 
     def perform_action(self) -> List[Statement]:
+        """Perform a random action on a table
+
+        Raises:
+            NotImplementedError: if action is not implemented
+
+        Returns:
+            List[Statement]: List of Statement objects to be executed on the database
+        """
         selected_action = random.choices(
             self.actions, [action.frequency for action in self.actions]
         )[0]

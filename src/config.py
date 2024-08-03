@@ -91,14 +91,14 @@ class Config:
                     )
 
             for action in table["actions"]:
-                if Create.is_type(action, table_name):
+                if Create.is_valid(action, table_name):
                     actions.append(
                         Create(
                             action.get("name", None),
                             action.get("frequency", None),
                         ),
                     )
-                elif Remove.is_type(action, table_name):
+                elif Remove.is_valid(action, table_name):
                     actions.append(
                         Remove(
                             action.get("name", None),
@@ -106,7 +106,7 @@ class Config:
                             action.get("where_condition", None),
                         )
                     )
-                elif Set.is_type(action, table_name):
+                elif Set.is_valid(action, table_name):
 
                     actions.append(
                         Set(
@@ -127,6 +127,11 @@ class Config:
         return tables
 
     def _validate_table_config(self, tables: List[Table]):
+        """Validate the tables and fields in the config. Can only be called after loading the tables
+
+        Args:
+            tables (List[Table]): List of Table objects to validate
+        """
 
         def _get_table_by_name(table_name: str):
             for table in tables:

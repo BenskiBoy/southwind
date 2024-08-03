@@ -1,16 +1,14 @@
-from faker import Faker
-import faker_commerce
-
+from typing import Dict, List
+from enum import Enum
+import ast
 import random
 import time
 import re
 
-from typing import Dict, List
-from enum import Enum
-
+from faker import Faker
+import faker_commerce
 
 from .exceptions import InvalidValueError
-import ast
 
 
 fake = Faker("en_US")
@@ -20,6 +18,13 @@ Faker.seed(random.randint(0, 10000))
 
 
 class ImposterResult:
+    """
+    Parent class for all imposter results.
+    For the simple case of inserting a dummy value, we'd just have to return a value.
+    However, we also want to be able to return a value from a table, or increment a value that is the result of a query.
+    This is what these and the child classes are for.
+    """
+
     def __init__(self):
         pass
 
@@ -205,7 +210,6 @@ class Imposter:
     @classmethod
     def is_type(cls, value: str):
         faker_methods = [meth for meth in dir(fake) if meth[0] != "_"]
-        # import pdb; pdb.set_trace()
         if value.replace("fake.", "").split("(")[0] in faker_methods:
             return True
         if not cls.is_custom_method(value):
