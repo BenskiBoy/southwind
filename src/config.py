@@ -91,14 +91,14 @@ class Config:
                     )
 
             for action in table["actions"]:
-                if Create.is_type(action, table_name):
+                if Create.is_valid(action, table_name):
                     actions.append(
                         Create(
                             action.get("name", None),
                             action.get("frequency", None),
                         ),
                     )
-                elif Remove.is_type(action, table_name):
+                elif Remove.is_valid(action, table_name):
                     actions.append(
                         Remove(
                             action.get("name", None),
@@ -106,7 +106,7 @@ class Config:
                             action.get("where_condition", None),
                         )
                     )
-                elif Set.is_type(action, table_name):
+                elif Set.is_valid(action, table_name):
 
                     actions.append(
                         Set(
