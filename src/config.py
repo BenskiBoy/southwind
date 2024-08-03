@@ -127,6 +127,11 @@ class Config:
         return tables
 
     def _validate_table_config(self, tables: List[Table]):
+        """Validate the tables and fields in the config. Can only be called after loading the tables
+
+        Args:
+            tables (List[Table]): List of Table objects to validate
+        """
 
         def _get_table_by_name(table_name: str):
             for table in tables:

@@ -9,9 +9,19 @@ class Exporter:
         self.base_path = base_path
 
     def export(self, table_name: str, values: List[Dict], format: str) -> None:
-        if format.upper() == "JSON":
+        """_summary_
+
+        Args:
+            table_name (str): table name (used as file partition)
+            values (List[Dict]): list of dictionaries to export to target format
+            format (str): export format, either 'json' or 'csv'
+
+        Raises:
+            NotImplementedError: If not a valid export format
+        """
+        if format.lower() == "json":
             self._export_json(self.base_path, table_name, values)
-        elif format.upper() == "CSV":
+        elif format.lower() == "csv":
             self._export_csv(self.base_path, table_name, values)
         else:
             raise NotImplementedError()

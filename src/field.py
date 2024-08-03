@@ -1,9 +1,7 @@
-from typing import Dict, List
-from enum import Enum
-from .imposter import Imposter, ImposterDirectResult, ImposterIncrementResult, ImposterLookupResult, ImposterResult
+from typing import Dict
+from .imposter import Imposter
 
-from .exceptions import InvalidValueError, InvalidConfigSettingError, validate_keys
-import ast
+from .exceptions import InvalidValueError, validate_keys
 
 
 
